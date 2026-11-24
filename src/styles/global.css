@@ -1,0 +1,274 @@
+/* MOLECULAB | BYTE LAB — tokens e base global.
+   Componentes usam CSS Modules; aqui ficam só variáveis, reset e utilitários. */
+
+:root {
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --bg: #0b0e16;
+  --bg-elev: #11151f;
+  --surface: #151a26;
+  --surface-2: #1b2130;
+  --border: #252c3d;
+  --border-strong: #343d54;
+  --ink: #e6e8f0;
+  --ink-2: #a9afc2;
+  --ink-3: #747b92;
+
+  --purple: #8b6cff;
+  --purple-strong: #6f4ef2;
+  --purple-soft: rgba(139, 108, 255, 0.14);
+  --cyan: #3ad6e6;
+  --cyan-soft: rgba(58, 214, 230, 0.12);
+  --magenta: #ef5fb6;
+  --success: #46d39a;
+  --warning: #f2b84b;
+  --danger: #ff6b6b;
+
+  --nature-exp: #46d39a;
+  --nature-calc: #3ad6e6;
+  --nature-est: #f2b84b;
+  --nature-na: #747b92;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.25);
+  --sidebar-w: 248px;
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--cyan);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #f5f6fa;
+  --bg-elev: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #eef0f6;
+  --border: #dde1eb;
+  --border-strong: #c5cbd9;
+  --ink: #141826;
+  --ink-2: #4a5168;
+  --ink-3: #737a90;
+  --purple: #6440e8;
+  --purple-strong: #5330d6;
+  --purple-soft: rgba(100, 64, 232, 0.1);
+  --cyan: #0a8fa3;
+  --cyan-soft: rgba(10, 143, 163, 0.1);
+  --magenta: #c2338a;
+  --nature-exp: #12855a;
+  --nature-calc: #0a8fa3;
+  --nature-est: #a86a00;
+  --nature-na: #737a90;
+  --shadow: 0 1px 2px rgba(20, 24, 38, 0.06), 0 6px 20px rgba(20, 24, 38, 0.06);
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: var(--radius-sm);
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+::selection {
+  background: var(--purple-soft);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Controles de formulário compartilhados */
+.input,
+.select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  transition: border-color 0.15s;
+}
+.input:hover,
+.select:hover {
+  border-color: var(--border-strong);
+}
+.input:focus,
+.select:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+.input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--purple-strong);
+  border-color: var(--purple-strong);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--purple);
+  border-color: var(--purple);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
+}
+.btn-ghost:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.btn-sm {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+}
+.segmented button {
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.segmented button[aria-pressed='true'] {
+  background: var(--surface-2);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.label {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.muted {
+  color: var(--ink-2);
+}
+.faint {
+  color: var(--ink-3);
+}
+
+.svg-host svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

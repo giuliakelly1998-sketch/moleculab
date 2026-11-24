@@ -1,0 +1,27 @@
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-bottom: 16px;
+}
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 12px;
+}
+.card { padding: 16px; display: flex; flex-direction: column; }
+.cardHead { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.cardHead h2 { font-size: 15px; }
+.unit { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.explain { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.values { list-style: none; margin: 12px 0 0; padding: 0; }
+.values li { padding: 10px 0; border-top: 1px solid var(--border); }
+.valueLine { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.value { flex: 1 1 auto; font-family: var(--font-mono); font-size: 15px; color: var(--ink); overflow-wrap: anywhere; }
+.valueText { flex: 1 1 auto; font-size: 14px; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
+.na { color: var(--ink-3); font-size: 14px; }
+.source { font-size: 12px; color: var(--ink-3); margin-top: 4px; overflow-wrap: anywhere; }

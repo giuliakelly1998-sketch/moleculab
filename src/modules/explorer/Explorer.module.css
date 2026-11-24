@@ -1,0 +1,130 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+.viewerPanel { overflow: hidden; }
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); padding: 0 4px; cursor: pointer; }
+.check input { accent-color: var(--purple); width: 16px; height: 16px; }
+
+.stage {
+  position: relative;
+  height: clamp(320px, 52vh, 560px);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--purple) 7%, transparent), transparent 60%),
+    var(--bg-elev);
+}
+.stage2d { height: 100%; display: grid; place-items: center; padding: 16px; }
+.stage2d :global(.svg-host) { max-width: 560px; }
+
+.viewer3d { position: absolute; inset: 0; }
+.canvasHost { position: absolute; inset: 0; }
+.canvasHost canvas { outline: none; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; }
+.viewerTools {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.viewerTools :global(.btn) { background: color-mix(in srgb, var(--surface-2) 88%, transparent); backdrop-filter: blur(4px); }
+
+.stageFoot { padding: 8px 14px; font-size: 12px; color: var(--ink-2); border-top: 1px solid var(--border); }
+
+.atomCard { margin: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev); }
+.atomHead { display: flex; gap: 12px; align-items: center; }
+.atomHead > div { flex: 1; }
+.atomSymbol {
+  width: 40px; height: 40px; flex: none;
+  display: grid; place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--purple-soft);
+  color: var(--purple);
+  font-weight: 700;
+  font-size: 17px;
+}
+.bondList { list-style: none; margin: 10px 0 0; padding: 0; font-size: 13px; }
+.bondList li { display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; padding: 5px 0; border-top: 1px solid var(--border); font-family: var(--font-mono); }
+.bondList li span:first-of-type { font-family: var(--font-sans); color: var(--ink-2); }
+
+.groups { padding: 14px; border-top: 1px solid var(--border); }
+.groupsHead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.groupsHead h2 { font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.chip:hover { border-color: var(--chip); }
+.chip[aria-pressed='true'] { border-color: var(--chip); background: color-mix(in srgb, var(--chip) 16%, var(--bg-elev)); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--chip); }
+.chipCount { color: var(--ink-3); font-family: var(--font-mono); font-size: 12px; }
+
+.info { padding: 16px; position: sticky; top: 16px; }
+.infoHead { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.title { font-size: 20px; overflow-wrap: anywhere; }
+.iupac { font-size: 13px; color: var(--ink-2); margin-top: 4px; overflow-wrap: anywhere; }
+.provenance { font-size: 12px; color: var(--ink-3); margin-top: 12px; }
+.infoActions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+
+.candidates { padding: 16px; margin-top: 16px; }
+.candidates h2 { font-size: 16px; margin-bottom: 4px; }
+.candidates ul { list-style: none; margin: 0; padding: 0; }
+.candidates li button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 120px 100px;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 10px 8px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+.candidates li button:hover { background: var(--surface-2); }
+.candTitle { overflow-wrap: anywhere; }
+
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .info { position: static; }
+}
+@media (max-width: 600px) {
+  .candidates li button { grid-template-columns: minmax(0, 1fr) auto; }
+  .candidates li button span:nth-child(3), .candidates li button span:nth-child(4) { display: none; }
+  .bondList li { grid-template-columns: 90px 1fr auto; }
+  .stage { height: 340px; }
+}
+
+.atomSub { font-size: 12px; color: var(--ink-3); font-weight: 600; margin: 14px 0 0; }
+.angleList { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 6px; }
+.angleList button {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); cursor: pointer; font-size: 13px;
+}
+.angleList button:hover { border-color: #f2b84b; }
+.angleList button[aria-pressed='true'] { border-color: #f2b84b; background: color-mix(in srgb, #f2b84b 14%, var(--surface)); }
+.angleVal { font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: #f2b84b; }
