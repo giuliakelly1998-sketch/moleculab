@@ -19,7 +19,7 @@ export default function FavoritesPage() {
   return (
     <div>
       <PageHeader
-        title="Favorites"
+        title="Favoritos"
         description="Moléculas salvas e pesquisas recentes, guardadas apenas neste navegador."
         actions={
           favorites.length > 0 && (

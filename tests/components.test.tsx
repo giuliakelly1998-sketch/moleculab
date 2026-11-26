@@ -14,8 +14,12 @@ describe('calculadora (componente)', () => {
     wrap(<CalculatorCard def={getCalculator('massa-mol') as CalcDef} />);
     fireEvent.change(screen.getByLabelText(/^m Massa$/), { target: { value: '36,03' } });
     fireEvent.change(screen.getByLabelText(/^M Massa molar$/), { target: { value: '18.015' } });
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText(/n = 36,03 g ÷ 18,015 g\/mol/)).toBeInTheDocument();
+    expect(screen.getAllByText('2').some((el) => el.classList.contains('mono'))).toBe(true);
+    // Substituição renderizada em notação matemática (KaTeX), com o resultado na mesma unidade de trabalho.
+    const sub = screen.getByText(/Substituição/).nextElementSibling as HTMLElement;
+    expect(sub.querySelector('.katex')).not.toBeNull();
+    expect(sub.textContent).toContain('36,03');
+    expect(sub.textContent).toContain('18,015');
     expect(screen.getByText(/Dimensão N — consistente com quantidade de matéria/)).toBeInTheDocument();
   });
 
@@ -118,5 +122,19 @@ describe('troca de calculadora (regressão)', () => {
     fireEvent.change(screen.getByLabelText(/^n Quantidade de matéria$/), { target: { value: '0,5' } });
     fireEvent.change(screen.getByLabelText(/^M Massa molar$/), { target: { value: '58,44' } });
     expect(screen.getByText('29,22')).toBeInTheDocument();
+  });
+});
+
+describe('calculadora: unidades homogêneas na substituição', () => {
+  it('Gibbs converte ΔH (kJ/mol) para J/mol antes de subtrair T·ΔS', () => {
+    wrap(<CalculatorCard def={getCalculator('gibbs') as CalcDef} />);
+    fireEvent.change(screen.getByLabelText(/^ΔH Variação de entalpia$/), { target: { value: '500' } });
+    fireEvent.change(screen.getByLabelText(/^T Temperatura$/), { target: { value: '520' } });
+    fireEvent.change(screen.getByLabelText(/^ΔS Variação de entropia$/), { target: { value: '100' } });
+    const sub = screen.getByText(/Substituição/).nextElementSibling as HTMLElement;
+    const txt = sub.textContent ?? '';
+    expect(txt).toContain('500000');
+    expect(txt).toContain('448000');
+    expect(txt).not.toContain('kJ');
   });
 });

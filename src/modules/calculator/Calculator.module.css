@@ -10,20 +10,23 @@
 .cardHead h2 { font-size: 20px; }
 .cardHead p { color: var(--ink-2); margin-top: 4px; max-width: 70ch; }
 .equations { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
-.equations code {
-  padding: 8px 12px;
+.eq {
+  padding: 10px 16px;
+  color: var(--ink);
   border-radius: var(--radius-sm);
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-left: 3px solid var(--purple);
-  font-size: 14px;
+  font-size: 17px;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .body { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
 .inputs { display: grid; gap: 14px; }
 .field { display: grid; gap: 6px; }
 .field label { font-size: 14px; font-weight: 500; }
-.sym { font-family: var(--font-mono); color: var(--cyan); font-weight: 500; }
+.sym { color: var(--cyan); font-size: 1.08em; margin-right: 2px; }
 .inputRow { display: flex; gap: 6px; }
 .inputRow :global(.input) { flex: 1; min-width: 0; }
 .inputRow :global(.select) { flex: 0 0 auto; max-width: 52%; }
@@ -48,7 +51,10 @@
 .dimCheck { font-size: 12px; color: var(--success); margin-top: 6px; }
 .verdict { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--purple-soft); font-weight: 500; margin: 4px 0 8px; }
 .steps { display: grid; gap: 6px; }
-.steps code { overflow-wrap: anywhere; color: var(--ink); background: var(--surface); padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.step { color: var(--ink); background: var(--surface); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); overflow-x: auto; font-size: 15px; line-height: 2.1; }
+.step :global(.katex) { white-space: normal; }
+.step :global(.katex-display) { margin: 6px 0; text-align: left; }
+.step :global(.katex-display > .katex) { text-align: left; }
 .conv { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
 .note { font-size: 13px; color: var(--ink-2); margin-top: 10px; padding-left: 10px; border-left: 2px solid var(--warning); }
 

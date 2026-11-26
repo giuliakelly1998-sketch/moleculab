@@ -17,7 +17,7 @@ export default function CalculatorPage() {
   return (
     <div>
       <PageHeader
-        title="Chemistry Calculator"
+        title="Calculadora química"
         description="Cada cálculo converte as entradas para o SI e propaga as dimensões; somas e funções exponenciais/logarítmicas com dimensões incompatíveis são bloqueadas."
       />
       <div className={s.layout}>

@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { Tex } from '../../components/Tex';
+import { trackEvent } from '../../services/analytics';
+import { useMemo, useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import s from './Knowledge.module.css';
 import { AREA_LABELS, Area, TOPICS } from '../../data/knowledge';
@@ -9,6 +11,7 @@ const AREAS = Object.keys(AREA_LABELS) as Area[];
 const norm = (x: string) => x.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 export default function KnowledgePage() {
+  useEffect(() => trackEvent('conhecimento'), []);
   const { topicId } = useParams();
   const [area, setArea] = useState<Area | 'all'>('all');
   const [q, setQ] = useState('');
@@ -24,7 +27,7 @@ export default function KnowledgePage() {
     return (
       <article className={s.article}>
         <Link to="/knowledge" className={s.back}>
-          ← Knowledge Base
+          ← Base de conhecimento
         </Link>
         <p className={s.area}>{AREA_LABELS[topic.area]}</p>
         <h1>{topic.title}</h1>
@@ -43,7 +46,7 @@ export default function KnowledgePage() {
           <div className={s.eqs}>
             {topic.equations.map((e) => (
               <div key={e.expr} className={s.eq}>
-                <code>{e.expr}</code>
+                {e.tex ? <Tex className={s.eqTex} tex={e.tex} /> : <code title="Padrão SMARTS (linguagem de busca de subestruturas)">{e.expr}</code>}
                 <span>{e.meaning}</span>
               </div>
             ))}
@@ -96,7 +99,7 @@ export default function KnowledgePage() {
 
   return (
     <div>
-      <PageHeader title="Knowledge Base" description="Conteúdos de referência com definição, fundamentação, equações, exemplos e bibliografia verificável." />
+      <PageHeader title="Base de conhecimento" description="Conteúdos de referência com definição, fundamentação, equações, exemplos e bibliografia verificável." />
       <div className={s.filters}>
         <div className="segmented" role="group" aria-label="Área">
           <button aria-pressed={area === 'all'} onClick={() => setArea('all')}>
@@ -117,7 +120,7 @@ export default function KnowledgePage() {
             <span className={s.area}>{AREA_LABELS[t.area]}</span>
             <h2>{t.title}</h2>
             <p>{t.definition}</p>
-            <span className={s.eqPreview}>{t.equations[0]?.expr}</span>
+            <span className={s.eqPreview}>{t.equations[0]?.tex ? <Tex tex={t.equations[0].tex} /> : <code>{t.equations[0]?.expr}</code>}</span>
           </Link>
         ))}
       </div>

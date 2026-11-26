@@ -1,4 +1,5 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { trackEvent } from '../../services/analytics';
 import s from './Calculator.module.css';
 import type { CalcDef, CalcOutput, CalcResult, VarDef } from '../../calc/calculators';
 import { KINDS, KindId, toQ, fromQ, getUnit } from '../../calc/units';
@@ -6,6 +7,8 @@ import { CalcError, DimensionError, formatDims, Q } from '../../calc/quantity';
 import { fmtNum, parseNumber } from '../../utils/format';
 import { molarMass, FormulaError } from '../../chem/formula';
 import { Notice, Spinner } from '../../components/ui';
+import { Tex } from '../../components/Tex';
+import { WORK_UNIT, texQ, texNum, symTex, UNIT_TEX } from '../../calc/tex';
 
 const PlotView = lazy(() => import('./PlotView'));
 
@@ -69,12 +72,12 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
         const kind = kindForUnit(kindsOf(v.kind), units[v.key]);
         qs[v.key] = toQ(parseNumber(raw[v.key])!, kind, units[v.key]);
       }
-      const show = (key: string) => {
+      // Valor na unidade de trabalho (coerente), já convertido: a conta escrita fica homogênea.
+      const show = (key: string, unitId?: string) => {
         const v = def.variables.find((x) => x.key === key)!;
         const kind = kindForUnit(kindsOf(v.kind), units[key]);
-        const u = getUnit(kind, units[key]);
-        const val = (raw[key] ?? '').trim().replace('.', ',');
-        return u.label === '—' ? val : `${val} ${u.label}`;
+        if (kind === 'percent') return texNum(qs[key].value);
+        return texQ(qs[key], kind, unitId ?? WORK_UNIT[kind]);
       };
       return { result: def.compute(qs, { mode, show }), qs };
     } catch (e) {
@@ -82,6 +85,11 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
       return { error: e instanceof Error ? e.message : 'Erro no cálculo.' };
     }
   }, [allValid, activeVars, raw, units, def, mode]);
+
+  const hasResult = !!computed.result;
+  useEffect(() => {
+    if (hasResult) trackEvent('calculo');
+  }, [hasResult]);
 
   const applyFormula = (key: string, formula: string) => {
     setFormulas((f) => ({ ...f, [key]: formula }));
@@ -101,9 +109,11 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
       const kind = kindForUnit(kindsOf(v.kind), units[v.key]);
       const q = computed.qs?.[v.key];
       const u = getUnit(kind, units[v.key]);
-      if (!q || (u.factor === 1 && !u.offset) || kind === 'percent') return null;
-      const siUnit = KINDS[kind].units.find((x) => x.factor === 1 && !x.offset);
-      return `${v.symbol} = ${fmtNum(parseNumber(raw[v.key])!)} ${u.label} = ${fmtNum(q.value)} ${siUnit?.label ?? '(SI)'}`;
+      if (!q || kind === 'dimensionless' || kind === 'count') return null;
+      const target = def.id === 'clausius-clapeyron' && kind === 'pressure' ? 'kPa' : WORK_UNIT[kind];
+      if (kind === 'percent') return `${symTex(v.symbol)} = ${texNum(parseNumber(raw[v.key])!)}\\,\\% = ${texNum(q.value)}`;
+      if (u.id === target) return null;
+      return `${symTex(v.symbol)} = ${texNum(parseNumber(raw[v.key])!)}\\ ${UNIT_TEX[u.id] ?? u.label} = ${texQ(q, kind, target)}`;
     })
     .filter(Boolean) as string[];
 
@@ -116,7 +126,9 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
 
       <div className={s.equations} aria-label="Equações utilizadas">
         {def.equations.map((e) => (
-          <code key={e}>{e}</code>
+          <div key={e} className={s.eq}>
+            <Tex tex={e} />
+          </div>
         ))}
       </div>
 
@@ -147,7 +159,7 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
             return (
               <div key={v.key} className={s.field}>
                 <label htmlFor={id}>
-                  <span className={s.sym}>{v.symbol}</span> {v.label}
+                  <Tex className={s.sym} tex={symTex(v.symbol)} /> {v.label}
                 </label>
                 <div className={s.inputRow}>
                   <input
@@ -158,6 +170,7 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
                     onChange={(e) => setRaw((x) => ({ ...x, [v.key]: e.target.value }))}
                     onBlur={() => setTouched((t) => ({ ...t, [v.key]: true }))}
                     aria-invalid={!!err}
+                    aria-label={`${v.symbol} ${v.label}`}
                     aria-describedby={`${id}-help`}
                     placeholder="0"
                   />
@@ -208,24 +221,26 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
                 <OutputLine key={i} o={o} unit={outUnits[i]} onUnit={(u) => setOutUnits((x) => ({ ...x, [i]: u }))} />
               ))}
               {computed.result.verdict && <p className={s.verdict}>{computed.result.verdict}</p>}
-              <h3>Substituição</h3>
-              <div className={s.steps}>
-                {computed.result.substitution.map((l) => (
-                  <code key={l}>{l}</code>
-                ))}
-              </div>
               {conversions.length > 0 && (
                 <>
-                  <h3>Conversão para o SI (feita antes do cálculo)</h3>
-                  <ul className={s.conv}>
+                  <h3>1. Conversão de unidades (antes do cálculo)</h3>
+                  <div className={s.steps}>
                     {conversions.map((c) => (
-                      <li key={c} className="mono">
-                        {c}
-                      </li>
+                      <div key={c} className={s.step}>
+                        <Tex tex={c} />
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </>
               )}
+              <h3>{conversions.length > 0 ? '2. ' : ''}Substituição, com todas as grandezas nas mesmas unidades</h3>
+              <div className={s.steps}>
+                {computed.result.substitution.map((l) => (
+                  <div key={l} className={s.step}>
+                    <Tex tex={l} />
+                  </div>
+                ))}
+              </div>
               {computed.result.notes?.map((n) => (
                 <p key={n} className={s.note}>
                   {n}
@@ -254,7 +269,7 @@ export function CalculatorCard({ def }: { def: CalcDef }) {
           <tbody>
             {def.variables.map((v) => (
               <tr key={v.key}>
-                <td className="mono">{v.symbol}</td>
+                <td><Tex tex={symTex(v.symbol)} /></td>
                 <td>
                   {v.label}. <span className="faint">{v.help}</span>
                 </td>
@@ -284,7 +299,7 @@ function OutputLine({ o, unit, onUnit }: { o: CalcOutput; unit?: string; onUnit:
   return (
     <div className={s.output}>
       <div className={s.outLabel}>
-        <span className={s.sym}>{o.symbol}</span> {o.label}
+        <Tex className={s.sym} tex={symTex(o.symbol)} /> {o.label}
       </div>
       <div className={s.outValue}>
         <span className="mono">{fmtNum(value, 5)}</span>

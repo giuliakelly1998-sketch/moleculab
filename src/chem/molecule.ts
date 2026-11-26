@@ -29,7 +29,7 @@ export interface MoleculeRecord {
   structure?: {
     molblock: string;
     dim: '3d' | '2d';
-    origin: 'pubchem-3d' | 'pubchem-2d' | 'rdkit-2d';
+    origin: 'pubchem-3d' | 'pubchem-2d' | 'rdkit-2d' | 'rdkit-3d';
     atomCount: number; // inclui H explícitos do arquivo
     bondCount: number;
   };
@@ -38,7 +38,9 @@ export interface MoleculeRecord {
 }
 
 export interface Candidate {
-  cid: number;
+  /** Ausente para compostos da biblioteca local. */
+  cid?: number;
+  smiles?: string;
   title: string;
   formula?: string;
   weight?: number;

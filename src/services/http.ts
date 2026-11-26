@@ -70,17 +70,74 @@ async function doFetch(url: string, opts: RequestOptions): Promise<Response> {
   }
 }
 
+const PUBCHEM_HOST = 'https://pubchem.ncbi.nlm.nih.gov/';
+const isLocalHost = () => typeof location !== 'undefined' && /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname);
+let proxyWorks: boolean | null = null;
+
+/** Endereço do proxy do próprio site (Cloudflare Pages Function em /api/pubchem/). */
+function proxyUrl(url: string): string | null {
+  if (typeof location === 'undefined' || !url.startsWith(PUBCHEM_HOST) || isLocalHost()) return null;
+  return new URL('api/pubchem/' + url.slice(PUBCHEM_HOST.length), location.href.split('#')[0]).toString();
+}
+
+const inIframe = () => {
+  try {
+    return typeof window !== 'undefined' && window.self !== window.top;
+  } catch {
+    return true;
+  }
+};
+
+/**
+ * Tenta a PubChem diretamente; se a rede bloquear o acesso, tenta pelo proxy do próprio site.
+ * Depois que o proxy funciona uma vez, as próximas chamadas já vão direto por ele.
+ */
+async function fetchWithFallback(url: string, opts: RequestOptions): Promise<Response> {
+  const proxy = proxyUrl(url);
+  if (proxy && proxyWorks) return doFetch(proxy, opts);
+  try {
+    return await doFetch(url, opts);
+  } catch (e) {
+    if (!(e instanceof AppError) || e.code !== 'NETWORK') throw e;
+    if (proxy && proxyWorks !== false) {
+      try {
+        const r = await doFetch(proxy, opts);
+        // Só aceita a resposta se ela vier do proxy do MOLECULAB (cabeçalho próprio). Sem a função
+        // publicada (ou numa pré-visualização), o servidor devolve outra coisa: não é a PubChem.
+        if (r.headers.get('x-moleculab-proxy') === '1') {
+          proxyWorks = true;
+          return r;
+        }
+        proxyWorks = false;
+      } catch {
+        proxyWorks = false;
+      }
+    }
+    if (url.startsWith(PUBCHEM_HOST)) {
+      throw new AppError(
+        'NETWORK',
+        inIframe()
+          ? 'A PubChem não pode ser acessada nesta pré-visualização incorporada (conexões externas são bloqueadas). Abra o site em moleculab.pages.dev para buscar por nome.'
+          : 'Não foi possível acessar a PubChem (pubchem.ncbi.nlm.nih.gov). Verifique a conexão ou se a rede/alguma extensão do navegador bloqueia o site. Busca por SMILES continua funcionando.',
+        String(e),
+      );
+    }
+    throw e;
+  }
+}
+
 /** Requisição deduplicada: chamadas idênticas simultâneas compartilham a mesma resposta. */
 export function request(url: string, opts: RequestOptions = {}): Promise<Response> {
   const key = `${opts.method ?? 'GET'} ${url} ${opts.body?.toString() ?? ''}`;
   const existing = inflight.get(key);
   if (existing) return existing.then((r) => r.clone());
-  const p = doFetch(url, opts).finally(() => inflight.delete(key));
+  const p = fetchWithFallback(url, opts).finally(() => inflight.delete(key));
   inflight.set(key, p);
   return p.then((r) => r.clone());
 }
 
 export function __resetHttpForTests() {
   timestamps = [];
+  proxyWorks = null;
   inflight.clear();
 }

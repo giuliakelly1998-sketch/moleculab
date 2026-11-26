@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import s from './Explorer.module.css';
 import { SearchBar } from '../../components/SearchBar';
 import { Structure2D } from '../../components/Structure2D';
-import { CopyRow, EmptyState, Icon, KeyValue, Notice, PageHeader, Spinner, toast } from '../../components/ui';
+import { CopyButton, EmptyState, Icon, Notice, PageHeader, Spinner, toast } from '../../components/ui';
 import { useMolecule } from '../../state/MoleculeContext';
 import { useAppData, ViewerStyle } from '../../state/AppDataContext';
 import type { SelectedAtom, AngleSpec } from './Viewer3D';
@@ -16,15 +16,16 @@ import { CandidateList } from './CandidateList';
 const Viewer3D = lazy(() => import('./Viewer3D'));
 
 const STYLES: { id: ViewerStyle; label: string }[] = [
-  { id: 'ballstick', label: 'Ball-and-stick' },
-  { id: 'stick', label: 'Stick' },
-  { id: 'sphere', label: 'Space-filling' },
+  { id: 'ballstick', label: 'Bola e bastão' },
+  { id: 'stick', label: 'Bastões' },
+  { id: 'sphere', label: 'Preenchimento espacial' },
 ];
 
 const ORIGIN_LABEL = {
   'pubchem-3d': 'Conformação 3D calculada pela PubChem',
   'pubchem-2d': 'Coordenadas 2D da PubChem (sem conformação 3D disponível)',
   'rdkit-2d': 'Coordenadas 2D geradas pelo RDKit',
+  'rdkit-3d': 'Conformação 3D gerada pelo RDKit (ETKDG + MMFF94), da biblioteca local do MOLECULAB',
 } as const;
 
 export default function ExplorerPage() {
@@ -74,7 +75,7 @@ export default function ExplorerPage() {
 
   return (
     <div>
-      <PageHeader title="Molecular Explorer" description="Busque uma substância e explore a estrutura em 2D e 3D, com identificação de átomos, ligações e grupos funcionais." />
+      <PageHeader title="Explorador molecular" description="Busque uma substância e explore a estrutura em 2D e 3D, com identificação de átomos, ligações e grupos funcionais." />
       <SearchBar initial={m.lastQuery?.text ?? ''} initialMode={m.lastQuery?.mode} busy={m.status === 'loading'} onSearch={onSearch} />
 
       <div style={{ marginTop: 16 }}>
@@ -97,7 +98,7 @@ export default function ExplorerPage() {
       </div>
 
       {m.candidates && m.status !== 'loading' && (
-        <CandidateList candidates={m.candidates} onPick={(c) => m.openCid(c.cid, c.title)} interpretedAs={m.interpretedAs} />
+        <CandidateList candidates={m.candidates} onPick={(c) => (c.cid ? m.openCid(c.cid, c.title) : c.smiles && m.search(c.smiles, 'smiles'))} interpretedAs={m.interpretedAs} />
       )}
 
       {!rec && !m.candidates && m.status !== 'loading' && (
@@ -167,7 +168,7 @@ export default function ExplorerPage() {
             </div>
 
             <div className={s.stageFoot}>
-              {rec.structure ? ORIGIN_LABEL[rec.structure.origin] : 'Sem arquivo de estrutura; desenho 2D gerado a partir do SMILES.'}
+              {view === '2d' ? 'Desenho 2D gerado pelo RDKit a partir da estrutura.' : rec.structure ? ORIGIN_LABEL[rec.structure.origin] : 'Sem arquivo de estrutura; desenho 2D gerado a partir do SMILES.'}
               {view === '3d' && rec.structure?.dim === '2d' && ' — exibida em plano; não é uma geometria otimizada.'}
               {view === '3d' && <span className="faint"> · Clique em um átomo para inspecioná-lo.</span>}
             </div>
@@ -227,18 +228,44 @@ export default function ExplorerPage() {
                 <Icon name="star" filled={fav} size={15} />
               </button>
             </div>
-            <KeyValue
-              items={[
-                ['Fórmula molecular', rec.formula ? <CopyRow value={rec.formula} what="Fórmula" /> : null],
-                ['Massa molar', rec.molecularWeight !== undefined ? `${fmtNum(rec.molecularWeight, 6)} g/mol` : null],
-                ['Átomos', rec.structure ? `${rec.structure.atomCount} (incl. H) · ${m.analysis?.heavyAtomCount ?? rec.pubchem?.heavyAtoms ?? '—'} pesados` : null],
-                ['Ligações', rec.structure ? `${rec.structure.bondCount} (incl. H)` : null],
-                ['SMILES', <CopyRow key="smi" value={rec.smiles} what="SMILES" />],
-                ['InChI', rec.inchi ? <CopyRow value={rec.inchi} what="InChI" /> : null],
-                ['InChIKey', rec.inchiKey ? <span className="mono">{rec.inchiKey}</span> : null],
-                ['PubChem CID', rec.cid ? <a href={compoundUrl(rec.cid)} target="_blank" rel="noreferrer">{rec.cid} <Icon name="external" size={12} /></a> : null],
-              ]}
-            />
+            <h3 className={s.infoSub}>Composição</h3>
+            <div className={s.facts}>
+              <div className={s.fact}>
+                <span>Fórmula molecular</span>
+                <strong>{rec.formula ? <FormulaText formula={rec.formula} /> : '—'}</strong>
+              </div>
+              <div className={s.fact}>
+                <span>Massa molar</span>
+                <strong>{rec.molecularWeight !== undefined ? <>{fmtNum(rec.molecularWeight, 6)} <small>g/mol</small></> : '—'}</strong>
+              </div>
+              <div className={s.fact}>
+                <span>Átomos</span>
+                <strong>{rec.structure ? rec.structure.atomCount : '—'}</strong>
+                <small>{rec.structure ? `${m.analysis?.heavyAtomCount ?? rec.pubchem?.heavyAtoms ?? '—'} sem contar H` : ''}</small>
+              </div>
+              <div className={s.fact}>
+                <span>Ligações</span>
+                <strong>{rec.structure ? rec.structure.bondCount : '—'}</strong>
+                <small>{rec.structure ? 'incluindo as com H' : ''}</small>
+              </div>
+            </div>
+
+            <h3 className={s.infoSub}>Identificadores</h3>
+            <div className={s.ids}>
+              <IdBlock label="SMILES" value={rec.smiles} hint="estrutura em uma linha de texto" />
+              <IdBlock label="InChI" value={rec.inchi} hint="identificador padrão IUPAC" />
+              <IdBlock label="InChIKey" value={rec.inchiKey} hint="versão curta do InChI, para buscas" />
+              <div className={s.idBlock}>
+                <div className={s.idLabel}>PubChem CID</div>
+                {rec.cid ? (
+                  <a href={compoundUrl(rec.cid)} target="_blank" rel="noreferrer" className="mono">
+                    {rec.cid} <Icon name="external" size={12} />
+                  </a>
+                ) : (
+                  <span className="faint">indisponível</span>
+                )}
+              </div>
+            </div>
             <p className={s.provenance}>
               {rec.source === 'pubchem' ? (
                 <>Fonte: PubChem (NCBI), consultado em {new Date(rec.retrievedAt).toLocaleString('pt-BR')}. Massa molar e identificadores calculados pela PubChem.</>
@@ -328,6 +355,36 @@ function AtomCard({ atom, is3D, angle, onAngle, onClose }: { atom: SelectedAtom;
           ? 'Distâncias e ângulos medidos na conformação 3D calculada pela PubChem (geometria teórica, não medida experimentalmente). Referências: carbono sp³ ≈ 109,5°, sp² ≈ 120°, sp = 180°.'
           : 'Atenção: esta estrutura só tem coordenadas 2D (plana). Distâncias e ângulos aqui não representam a geometria real da molécula.'}
       </p>
+    </div>
+  );
+}
+
+/** Fórmula com índices subscritos: C8H10N4O2 → C₈H₁₀N₄O₂ (carga final sobrescrita). */
+function FormulaText({ formula }: { formula: string }) {
+  const m = /^(.*?)([+-]\d*|\d*[+-])?$/.exec(formula)!;
+  const parts = m[1].split(/(\d+)/).filter(Boolean);
+  return (
+    <span className={s.formula}>
+      {parts.map((p, i) => (/^\d+$/.test(p) ? <sub key={i}>{p}</sub> : <span key={i}>{p}</span>))}
+      {m[2] && <sup>{m[2]}</sup>}
+    </span>
+  );
+}
+
+function IdBlock({ label, value, hint }: { label: string; value?: string; hint: string }) {
+  return (
+    <div className={s.idBlock}>
+      <div className={s.idLabel}>
+        {label} <span className="faint">· {hint}</span>
+      </div>
+      {value ? (
+        <div className={s.idValue}>
+          <code>{value}</code>
+          <CopyButton text={value} what={label} />
+        </div>
+      ) : (
+        <span className="faint">indisponível</span>
+      )}
     </div>
   );
 }

@@ -110,6 +110,8 @@ export function drawSvg(rdkit: RDKitModule, rec: MoleculeRecord, o: SvgOptions):
       width: o.width,
       height: o.height,
       bondLineWidth: 1.6,
+      padding: 0.12,
+      highlightRadius: 0.32,
       addStereoAnnotation: true,
       clearBackground: false,
     };
@@ -119,11 +121,23 @@ export function drawSvg(rdkit: RDKitModule, rec: MoleculeRecord, o: SvgOptions):
       const c = (o.highlightColor ?? [80, 220, 230]).map((x) => x / 255);
       details.highlightColour = c;
     }
-    const svg = w.mol.get_svg_with_highlights(JSON.stringify(details));
+    const svg = responsiveSvg(w.mol.get_svg_with_highlights(JSON.stringify(details)), o.width, o.height);
     return o.darkInk === false ? svg : recolorForDark(svg);
   } finally {
     w.mol.delete();
   }
+}
+
+/**
+ * Torna o SVG do RDKit responsivo: troca largura/altura fixas em px por 100% e garante o viewBox.
+ * Assim o desenho se ajusta ao quadro (sem sair da janela) em qualquer tamanho de tela.
+ */
+export function responsiveSvg(svg: string, w: number, h: number): string {
+  return svg.replace(/<svg([^>]*)>/, (_m, attrs: string) => {
+    let a = attrs.replace(/\swidth=['"][^'"]*['"]/, '').replace(/\sheight=['"][^'"]*['"]/, '');
+    if (!/viewBox=/.test(a)) a += ` viewBox='0 0 ${w} ${h}'`;
+    return `<svg${a} width='100%' height='100%' preserveAspectRatio='xMidYMid meet'>`;
+  });
 }
 
 /** SVG pré-renderizado a partir de um SMILES (usado nos exemplos de grupos funcionais). */

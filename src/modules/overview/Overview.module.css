@@ -22,7 +22,7 @@
 .heroText { position: relative; z-index: 1; max-width: 760px; }
 .brandLine { display: flex; align-items: center; gap: 14px; }
 .brandLine h1 { font-size: clamp(30px, 4.6vw, 46px); letter-spacing: 0.04em; font-weight: 700; line-height: 1; }
-.byte { font-family: var(--font-mono); color: var(--ink-3); font-size: 13px; margin-top: 4px; }
+.byte { font-family: var(--font-mono); color: var(--purple); font-weight: 600; font-size: 15px; letter-spacing: 0.08em; margin-top: 4px; }
 .slogan { font-size: clamp(18px, 2.2vw, 22px); color: var(--cyan); margin-top: 18px; font-weight: 500; }
 .lede { color: var(--ink-2); margin-top: 8px; max-width: 60ch; }
 .search { margin-top: 24px; }
@@ -68,3 +68,6 @@
   .cols { grid-template-columns: minmax(0, 1fr); }
   .side { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
 }
+
+.counter { margin-top: 14px; font-size: 14px; color: var(--ink-2); }
+.counter strong { font-family: var(--font-mono); color: var(--cyan); font-size: 16px; }

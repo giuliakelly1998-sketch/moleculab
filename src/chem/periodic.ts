@@ -65,6 +65,8 @@ export interface ElementData {
   naturalIsotopes: { A: number; abundance: number }[];
   mostStableIsotope: { A: number; halfLife: number; unit: string } | null;
   cpkColor: string | null;
+  /** Propriedades que são previsões teóricas (Z ≥ 100), não medidas. */
+  predicted: string[];
 }
 
 export const PERIODIC: ElementData[] = DATA as ElementData[];

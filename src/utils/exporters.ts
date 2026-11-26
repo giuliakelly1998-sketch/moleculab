@@ -58,7 +58,7 @@ export function propertiesCsv(rec: MoleculeRecord, rows: PropertyRow[]): string 
 export function moleculeJson(rec: MoleculeRecord, analysis: Analysis | null, rows?: PropertyRow[]): string {
   return JSON.stringify(
     {
-      exportedBy: 'MOLECULAB | BYTE LAB',
+      exportedBy: 'MOLECULAB | THE BYTE LAB',
       exportedAt: new Date().toISOString(),
       molecule: { ...rec },
       functionalGroups: analysis?.groups.map((g) => ({ id: g.id, name: g.name, count: g.count, atoms: g.atoms })) ?? null,
@@ -90,7 +90,7 @@ export function reportHtml(rec: MoleculeRecord, rows: PropertyRow[], analysis: A
 .sub{color:#555;margin:4px 0 24px}table{border-collapse:collapse;width:100%;margin:12px 0 24px}th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}
 th{background:#f4f4f8;font-weight:600}td.v{white-space:nowrap}.mono{font-family:ui-monospace,monospace;word-break:break-all}.tag{font-size:12px;padding:1px 6px;border-radius:4px;background:#eee}
 .svg{border:1px solid #ddd;border-radius:6px;display:inline-block;padding:8px}footer{color:#666;font-size:12px;margin-top:32px}</style></head><body>
-<h1>${escHtml(rec.title)}</h1><p class="sub">MOLECULAB | BYTE LAB — relatório gerado em ${new Date().toLocaleString('pt-BR')}</p>
+<h1>${escHtml(rec.title)}</h1><p class="sub">MOLECULAB | THE BYTE LAB — relatório gerado em ${new Date().toLocaleString('pt-BR')}</p>
 ${svg ? `<div class="svg">${svg}</div>` : ''}
 <h2>Identificação</h2><table>${ident.filter(([, v]) => v).map(([k, v]) => `<tr><th>${k}</th><td class="mono">${escHtml(v!)}</td></tr>`).join('')}</table>
 <h2>Grupos funcionais (SMARTS / RDKit)</h2><p>${groups}</p>

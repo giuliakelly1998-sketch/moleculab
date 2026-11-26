@@ -1,4 +1,7 @@
-import { lazy, ReactNode, Suspense, useMemo, useState } from 'react';
+import { Tex } from '../../components/Tex';
+import { NAME_ORIGIN_PT, discoverersPt, locationPt } from '../../data/elementOriginPt';
+import { trackEvent } from '../../services/analytics';
+import { lazy, ReactNode, Suspense, useMemo, useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import s from './Elements.module.css';
 import {
@@ -130,6 +133,7 @@ function MiniTable({ current }: { current: ElementData }) {
 }
 
 export default function ElementPage() {
+  useEffect(() => trackEvent('elemento'), []);
   const { symbol = '' } = useParams();
   const nav = useNavigate();
   const { settings } = useAppData();
@@ -252,8 +256,8 @@ export default function ElementPage() {
           />
           <PickerRow
             label="Densidade"
-            units={[{ id: 'g', label: 'g/cm³' }, { id: 'kg', label: 'kg/m³' }]}
-            get={(_, u) => (e.densityGcm3 === null ? null : fmtNum(u === 'kg' ? e.densityGcm3 * 1000 : e.densityGcm3, 5))}
+            units={[{ id: 'g', label: 'g/cm³' }, { id: 'kg', label: 'kg/m³' }, { id: 'gL', label: 'g/L' }]}
+            get={(_, u) => (e.densityGcm3 === null ? null : fmtNum(u === 'g' ? e.densityGcm3 : e.densityGcm3 * 1000, 5))}
           />
           <PickerRow
             label="Condutividade"
@@ -276,15 +280,23 @@ export default function ElementPage() {
             get={(v) => n(v === 'crust' ? e.abundanceCrustMgKg : e.abundanceSeaMgL, 3)}
           />
           <PickerRow label="Descoberto" get={() => (e.discoveryYear ? String(e.discoveryYear) : ancient ? 'Antiguidade' : null)} />
+          {e.predicted?.length > 0 && (
+            <p className={s.predNote}>
+              Densidade e ponto de fusão deste elemento são <strong>previsões teóricas</strong>: só alguns átomos já foram produzidos, então não há medida macroscópica.
+            </p>
+          )}
+          {e.phase === 'gasoso' && e.densityGcm3 !== null && (
+            <p className={s.predNote}>Densidade de gás a 25 °C e 1 atm: {fmtNum(e.densityGcm3 * 1000, 4)} g/L.</p>
+          )}
         </Section>
 
         <div>
           <Section title="Visão geral" color="#ff7a45" icon="info" source="mendeleev">
             <Row label="Nome em inglês">{e.nameEn}</Row>
-            <Row label="Origem do nome (em inglês, como na fonte)">{e.nameOrigin}</Row>
+            <Row label="Origem do nome">{NAME_ORIGIN_PT[e.symbol] ?? e.nameOrigin}</Row>
             <Row label="Ano de descoberta">{e.discoveryYear ?? (ancient ? 'conhecido desde a Antiguidade' : null)}</Row>
-            <Row label="Descoberto por">{ancient ? 'conhecido desde a Antiguidade' : e.discoverers}</Row>
-            <Row label="Local de descoberta">{e.discoveryLocation}</Row>
+            <Row label="Descoberto por">{ancient ? 'conhecido desde a Antiguidade' : discoverersPt(e.discoverers)}</Row>
+            <Row label="Local de descoberta">{locationPt(e.discoveryLocation)}</Row>
             <Row label="Número CAS">
               {e.cas && (
                 <span className={s.inline}>
@@ -409,7 +421,7 @@ export default function ElementPage() {
                 <Row label="Número de coordenação">{cellData.info.coordination}</Row>
                 <Row label="Fator de empacotamento" badge="calculado">{fmtNum(cellData.info.packingFactor, 3)}</Row>
                 <Row label={`Raio de esfera rígida (${cellData.info.relation})`} badge="calculado">{`${fmtNum(cellData.r, 4)} pm`}</Row>
-                <Row label="Densidade teórica, ρ = n·M/(Nₐ·V)" badge={cellType === 'HCP' ? 'estimado' : 'calculado'}>
+                <Row label={<>Densidade teórica, <Tex tex={"\\rho = \\dfrac{n \\cdot M}{N_A \\cdot V}"} /></>} badge={cellType === 'HCP' ? 'estimado' : 'calculado'}>
                   {`${fmtNum(cellData.rho, 4)} g/cm³`}
                   {e.densityGcm3 !== null && <span className="faint"> (medida: {fmtNum(e.densityGcm3, 4)})</span>}
                 </Row>

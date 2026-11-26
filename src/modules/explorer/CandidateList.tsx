@@ -8,16 +8,16 @@ export function CandidateList({ candidates, onPick, interpretedAs }: { candidate
     <section className={`panel ${s.candidates}`} aria-label="Resultados">
       <h2>{interpretedAs === 'formula' ? 'Isômeros encontrados' : 'Resultados'}</h2>
       <p className="faint" style={{ fontSize: 13, marginBottom: 10 }}>
-        Mostrando até {candidates.length} registros da PubChem. Selecione um para abrir.
+        {candidates.some((c) => c.cid) ? `Mostrando até ${candidates.length} registros da PubChem.` : `${candidates.length} compostos da biblioteca local.`} Selecione um para abrir.
       </p>
       <ul>
         {candidates.map((c) => (
-          <li key={c.cid}>
+          <li key={c.cid ?? c.smiles}>
             <button onClick={() => onPick(c)}>
               <span className={s.candTitle}>{c.title}</span>
               <span className="mono faint">{c.formula}</span>
               <span className="mono faint">{c.weight !== undefined ? `${fmtNum(c.weight, 6)} g/mol` : ''}</span>
-              <span className="mono faint">CID {c.cid}</span>
+              <span className="mono faint">{c.cid ? `CID ${c.cid}` : 'local'}</span>
             </button>
           </li>
         ))}

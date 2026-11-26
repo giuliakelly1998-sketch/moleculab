@@ -1,3 +1,4 @@
+import { analyticsDisabled, setAnalyticsOptOut } from '../../services/analytics';
 import { useState } from 'react';
 import { useAppData, ViewerStyle } from '../../state/AppDataContext';
 import { cacheClear, cacheStats } from '../../services/cache';
@@ -6,13 +7,14 @@ import { Notice, PageHeader, toast } from '../../components/ui';
 import s from './Settings.module.css';
 
 export default function SettingsPage() {
+  const [optOut, setOptOut] = useState(() => analyticsDisabled());
   const { settings, updateSettings, clearFavorites, clearHistory, favorites, history, storageAvailable } = useAppData();
   const [stats, setStats] = useState(cacheStats());
   const [confirmAll, setConfirmAll] = useState(false);
 
   return (
     <div className={s.page}>
-      <PageHeader title="Settings" description="Preferências e dados guardados localmente neste navegador. Nada é enviado a servidores do MOLECULAB." />
+      <PageHeader title="Configurações" description="Preferências e dados guardados localmente neste navegador. Nada é enviado a servidores do MOLECULAB." />
       {!storageAvailable && <Notice kind="warn" title="Armazenamento local indisponível">Preferências, favoritos e histórico valem só para esta sessão.</Notice>}
 
       <section className={`panel ${s.section}`}>
@@ -28,9 +30,9 @@ export default function SettingsPage() {
         </Row>
         <Row label="Representação 3D padrão">
           <select className="select" value={settings.viewerStyle} onChange={(e) => updateSettings({ viewerStyle: e.target.value as ViewerStyle })}>
-            <option value="ballstick">Ball-and-stick</option>
-            <option value="stick">Stick</option>
-            <option value="sphere">Space-filling</option>
+            <option value="ballstick">Bola e bastão</option>
+            <option value="stick">Bastões</option>
+            <option value="sphere">Preenchimento espacial</option>
           </select>
         </Row>
         <Row label="Mostrar hidrogênios no 3D">
@@ -80,6 +82,16 @@ export default function SettingsPage() {
               Apagar tudo
             </button>
           )}
+        </Row>
+      </section>
+
+      <section className={`panel ${s.section}`}>
+        <h2>Privacidade</h2>
+        <Row label="Contagem anônima de acessos" hint="O site conta quantos navegadores diferentes o usam, para medir o alcance do projeto. Cada navegador recebe um código aleatório guardado só nele. Não coletamos nome, e-mail, localização nem o que você busca. Navegadores com “Do Not Track” ou Global Privacy Control ativos não são contados.">
+          <label className={s.inline}>
+            <input type="checkbox" checked={!optOut} onChange={(e) => { setAnalyticsOptOut(!e.target.checked); setOptOut(!e.target.checked); }} />
+            {optOut ? 'desativada neste navegador' : 'ativada'}
+          </label>
         </Row>
       </section>
 

@@ -5,13 +5,13 @@ import { Icon } from '../ui';
 import { useAppData } from '../../state/AppDataContext';
 
 const NAV: { to: string; label: string; icon: string; end?: boolean }[] = [
-  { to: '/', label: 'Overview', icon: 'overview', end: true },
-  { to: '/explorer', label: 'Molecular Explorer', icon: 'explorer' },
-  { to: '/properties', label: 'Chemical Properties', icon: 'properties' },
-  { to: '/functional-groups', label: 'Functional Groups', icon: 'groups' },
-  { to: '/calculator', label: 'Chemistry Calculator', icon: 'calculator' },
-  { to: '/elements', label: 'Periodic Table', icon: 'table' },
-  { to: '/knowledge', label: 'Knowledge Base', icon: 'knowledge' },
+  { to: '/', label: 'Início', icon: 'overview', end: true },
+  { to: '/explorer', label: 'Explorador molecular', icon: 'explorer' },
+  { to: '/properties', label: 'Propriedades químicas', icon: 'properties' },
+  { to: '/functional-groups', label: 'Grupos funcionais', icon: 'groups' },
+  { to: '/calculator', label: 'Calculadora química', icon: 'calculator' },
+  { to: '/elements', label: 'Tabela periódica', icon: 'table' },
+  { to: '/knowledge', label: 'Base de conhecimento', icon: 'knowledge' },
 ];
 
 export function Logo({ size = 30 }: { size?: number }) {
@@ -31,7 +31,7 @@ function Brand() {
       <Logo />
       <span className={s.brandText}>
         <span className={s.brandName}>MOLECULAB</span>
-        <span className={s.brandSub}>BYTE LAB</span>
+        <span className={s.brandSub}>THE BYTE LAB</span>
       </span>
     </Link>
   );
@@ -69,19 +69,19 @@ export function Shell({ children }: { children: ReactNode }) {
               {n.label}
             </NavLink>
           ))}
-          <div className={s.navGroup}>Workspace</div>
+          <div className={s.navGroup}>Seu espaço</div>
           <NavLink to="/favorites" className={link}>
             <Icon name="favorites" size={18} />
-            Favorites
+            Favoritos
             {favorites.length > 0 && <span className={s.count}>{favorites.length}</span>}
           </NavLink>
           <NavLink to="/settings" className={link}>
             <Icon name="settings" size={18} />
-            Settings
+            Configurações
           </NavLink>
         </nav>
         <div className={s.sidebarFoot}>
-          Explore Chemistry at Molecular Scale.
+          Explore a Química em escala molecular.
           <br />
           Dados: PubChem (NCBI) · RDKit · 3Dmol.js
           <br />

@@ -188,4 +188,5 @@ def tidy(v):
 
 rows = [tidy(r) for r in rows]
 OUT.write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")))
+import subprocess; from pathlib import Path as _P; subprocess.run([sys.executable, str(_P(__file__).with_name("fix-elements.py"))], check=True)
 print(f"{len(rows)} elementos → {OUT} ({OUT.stat().st_size // 1024} KB)")

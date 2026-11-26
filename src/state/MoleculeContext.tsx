@@ -1,3 +1,4 @@
+import { trackEvent } from '../services/analytics';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { MoleculeRecord, Candidate } from '../chem/molecule';
 import type { QueryMode, QueryType } from '../chem/queryDetect';
@@ -68,6 +69,7 @@ export function MoleculeProvider({ children }: { children: ReactNode }) {
         }
         setRecord(out.record);
         setStatus('ready');
+        trackEvent('molecula');
         addHistory({ text: t, mode, title: out.record.title, key: out.record.key });
       } catch (e) {
         if (id !== seq.current) return;
@@ -89,6 +91,7 @@ export function MoleculeProvider({ children }: { children: ReactNode }) {
         const rec = await recordFromCid(cid, label ?? String(cid), 'cid');
         if (id !== seq.current) return;
         setRecord(rec);
+        trackEvent('molecula');
         setNote(null);
         setInterpretedAs('cid');
         setStatus('ready');

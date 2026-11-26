@@ -1,4 +1,5 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { trackEvent } from '../../services/analytics';
+import { FormEvent, useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import s from './FunctionalGroups.module.css';
 import { PageHeader, Notice, Spinner, Icon } from '../../components/ui';
@@ -13,6 +14,7 @@ import { sanitizeSmiles } from '../../services/rdkit';
 import { toUserMessage } from '../../services/errors';
 
 export default function FunctionalGroupsPage() {
+  useEffect(() => trackEvent('grupos'), []);
   const m = useMolecule();
   const { rdkit, status } = useRDKit();
   const { settings } = useAppData();
@@ -50,7 +52,7 @@ export default function FunctionalGroupsPage() {
   return (
     <div>
       <PageHeader
-        title="Functional Groups"
+        title="Grupos funcionais"
         description="Reconhecimento estrutural por padrões SMARTS executados no RDKit. A classificação usa a conectividade dos átomos, nunca o nome da substância."
       />
 

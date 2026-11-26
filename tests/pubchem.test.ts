@@ -142,3 +142,67 @@ describe('PUG View (dados experimentais)', () => {
     expect(await annotation(962, 'Dipole Moment')).toEqual([]);
   });
 });
+
+describe('acesso à PubChem bloqueado pela rede', () => {
+  it('usa o proxy do próprio site (/api/pubchem/) quando a chamada direta falha', async () => {
+    const { request, __resetHttpForTests } = await import('../src/services/http');
+    __resetHttpForTests();
+    const orig = window.location;
+    Object.defineProperty(window, 'location', { value: new URL('https://moleculab.pages.dev/#/explorer'), configurable: true });
+    const calls: string[] = [];
+    const f = vi.fn(async (u: string) => {
+      calls.push(u);
+      if (u.startsWith('https://pubchem.ncbi.nlm.nih.gov/')) throw new TypeError('Failed to fetch');
+      return new Response('{"ok":1}', { status: 200, headers: { 'content-type': 'application/json', 'x-moleculab-proxy': '1' } });
+    });
+    vi.stubGlobal('fetch', f);
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const r = await request('https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/aspirin/cids/JSON');
+    vi.useRealTimers();
+    expect(await r.json()).toEqual({ ok: 1 });
+    expect(calls.at(-1)).toBe('https://moleculab.pages.dev/api/pubchem/rest/pug/compound/name/aspirin/cids/JSON');
+    vi.unstubAllGlobals();
+    Object.defineProperty(window, 'location', { value: orig, configurable: true });
+  });
+});
+
+describe('biblioteca local (nomes em português e uso sem PubChem)', () => {
+  const offline = () => {
+    globalThis.fetch = vi.fn(async () => {
+      throw new TypeError('Failed to fetch');
+    }) as typeof fetch;
+  };
+
+  it('encontra compostos por nome em português, sinônimo e sem acento', async () => {
+    const { findByName } = await import('../src/services/localLibrary');
+    expect((await findByName('cafeína'))?.pt).toBe('Cafeína');
+    expect((await findByName('CAFEINA'))?.pt).toBe('Cafeína');
+    expect((await findByName('vinagre'))?.pt).toBe('Ácido etanoico');
+    expect((await findByName('aspirin'))?.pt).toBe('Ácido acetilsalicílico');
+  });
+
+  it('sem PubChem, a busca por fórmula lista os isômeros da biblioteca', async () => {
+    offline();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const r = await searchMolecule('C6H12O6');
+    vi.useRealTimers();
+    expect(r.kind).toBe('multiple');
+    if (r.kind === 'multiple') expect(r.candidates.map((c) => c.title).sort()).toEqual(['D-Frutose', 'D-Galactose', 'D-Glicose']);
+  });
+
+  it('proxy ausente (resposta sem assinatura) não vira "não encontrado"', async () => {
+    const orig = window.location;
+    Object.defineProperty(window, 'location', { value: new URL('https://exemplo.preview.dev/#/explorer'), configurable: true });
+    globalThis.fetch = vi.fn(async (u: RequestInfo | URL) => {
+      if (String(u).startsWith('https://pubchem')) throw new TypeError('Failed to fetch');
+      return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain' } });
+    }) as typeof fetch;
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const err = await searchMolecule('xyzcomposto').catch((e) => e);
+    vi.useRealTimers();
+    Object.defineProperty(window, 'location', { value: orig, configurable: true });
+    expect(err).toBeInstanceOf(AppError);
+    expect((err as AppError).code).toBe('NETWORK');
+    expect((err as AppError).message).toMatch(/biblioteca local/);
+  });
+});

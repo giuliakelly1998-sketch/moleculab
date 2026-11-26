@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import s from './Calculator.module.css';
+import { Tex } from '../../components/Tex';
+import { texNum } from '../../calc/tex';
 import { molarMass, FormulaError } from '../../chem/formula';
 import { ATOMIC_WEIGHTS_SOURCE } from '../../chem/elements';
 import { fmtNum } from '../../utils/format';
@@ -24,8 +26,8 @@ export function MolarMassCalculator() {
         <p>Calcula a massa molar e a composição percentual em massa a partir da fórmula. Aceita parênteses, colchetes e hidratos (CuSO4·5H2O ou CuSO4.5H2O).</p>
       </header>
       <div className={s.equations}>
-        <code>M = Σ nᵢ · Aᵣ,ᵢ  (g/mol)</code>
-        <code>wᵢ = nᵢ · Aᵣ,ᵢ / M × 100 %</code>
+        <div className={s.eq}><Tex tex={'M = \\sum_i n_i \\cdot A_{r,i}\\quad (\\mathrm{g\\,mol^{-1}})'} /></div>
+        <div className={s.eq}><Tex tex={'w_i = \\dfrac{n_i \\cdot A_{r,i}}{M} \\times 100\\,\\%'} /></div>
       </div>
       <div className={s.field} style={{ maxWidth: 420 }}>
         <label htmlFor="mm-formula">Fórmula molecular</label>
@@ -50,9 +52,11 @@ export function MolarMassCalculator() {
           )}
           <h3>Substituição</h3>
           <div className={s.steps}>
-            <code>
-              M = {result.ok.composition.map((r) => `${r.count} × ${fmtNum(r.atomicMass, 7)}`).join(' + ')} = {fmtNum(result.ok.molarMass, 7)} g/mol
-            </code>
+            <div className={s.step}>
+              <Tex
+                tex={`M = ${result.ok.composition.map((r) => `${r.count} \\times ${texNum(r.atomicMass, 7)}`).join(' + ')} = ${texNum(result.ok.molarMass, 7)}\\ \\mathrm{g\\,mol^{-1}}`}
+              />
+            </div>
           </div>
           <h3>Composição</h3>
           <div style={{ overflowX: 'auto' }}>

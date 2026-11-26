@@ -21,12 +21,12 @@ const FEATURED = [
 ];
 
 const MODULES = [
-  { to: '/explorer', icon: 'explorer', title: 'Molecular Explorer', text: 'Busca na PubChem e visualização 2D/3D interativa.' },
-  { to: '/properties', icon: 'properties', title: 'Chemical Properties', text: 'Propriedades com fonte e natureza do dado.' },
-  { to: '/functional-groups', icon: 'groups', title: 'Functional Groups', text: '15 grupos reconhecidos por SMARTS no RDKit.' },
-  { to: '/calculator', icon: 'calculator', title: 'Chemistry Calculator', text: '18 calculadoras com verificação dimensional.' },
-  { to: '/elements', icon: 'table', title: 'Periodic Table', text: '118 elementos com propriedades e célula unitária 3D.' },
-  { to: '/knowledge', icon: 'knowledge', title: 'Knowledge Base', text: 'Conteúdos com equações e referências.' },
+  { to: '/explorer', icon: 'explorer', title: 'Explorador molecular', text: 'Busca na PubChem e visualização 2D/3D interativa.' },
+  { to: '/properties', icon: 'properties', title: 'Propriedades químicas', text: 'Propriedades com fonte e natureza do dado.' },
+  { to: '/functional-groups', icon: 'groups', title: 'Grupos funcionais', text: '15 grupos reconhecidos por SMARTS no RDKit.' },
+  { to: '/calculator', icon: 'calculator', title: 'Calculadora química', text: '18 calculadoras com verificação dimensional.' },
+  { to: '/elements', icon: 'table', title: 'Tabela periódica', text: '118 elementos com propriedades e célula unitária 3D.' },
+  { to: '/knowledge', icon: 'knowledge', title: 'Base de conhecimento', text: 'Conteúdos com equações e referências.' },
 ];
 
 type PingState = { status: 'checking' | 'ok' | 'down'; ms?: number; message?: string };
@@ -53,10 +53,10 @@ export default function OverviewPage() {
             <Logo size={40} />
             <div>
               <h1>MOLECULAB</h1>
-              <p className={s.byte}>BYTE LAB</p>
+              <p className={s.byte}>THE BYTE LAB</p>
             </div>
           </div>
-          <p className={s.slogan}>Explore Chemistry at Molecular Scale.</p>
+          <p className={s.slogan}>Explore a Química em escala molecular.</p>
           <p className={s.lede}>Estruturas, propriedades, grupos funcionais e cálculos químicos em um só lugar, com a origem de cada dado sempre visível.</p>
           <div className={s.search}>
             <SearchBar size="lg" onSearch={go} />

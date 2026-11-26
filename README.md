@@ -1,4 +1,4 @@
-# MOLECULAB | BYTE LAB
+# MOLECULAB | THE BYTE LAB
 
 **Explore Chemistry at Molecular Scale.**
 Plataforma web de exploração molecular e ferramentas químicas: busca na PubChem, visualização 2D/3D, propriedades com origem do dado, reconhecimento de grupos funcionais por SMARTS, 18 calculadoras com verificação dimensional e uma base de conhecimento com referências reais.
@@ -67,6 +67,29 @@ Outras decisões:
 - **Massas atômicas**: IUPAC/CIAAW 2021 (valores convencionais). **Constantes**: CODATA 2018 (R, Nₐ, F).
 
 ---
+
+## Contador anônimo de acessos (v1.4)
+
+O site conta visitantes únicos sem login e sem dados pessoais:
+
+- cada navegador gera um código aleatório (UUID) guardado só no `localStorage`;
+- o servidor (Cloudflare Pages Functions em `functions/api/`) guarda esse código, a data do primeiro e do último acesso e o número de visitas, num banco **Cloudflare D1**;
+- para impedir que alguém infle o número, o IP vira um hash com sal secreto que muda todo dia (o IP não é guardado) e cada rede pode criar no máximo 30 visitantes novos por dia;
+- navegadores com *Do Not Track* ou *Global Privacy Control* não são contados, e o usuário pode desligar a contagem em Configurações;
+- também é contado, de forma agregada por dia, o uso das ferramentas (moléculas abertas, cálculos, elementos etc.).
+
+**Configuração no Cloudflare (uma vez só):**
+
+1. Workers & Pages → D1 SQL Database → *Create* → nome `moleculab-db`.
+2. No projeto `moleculab` → Settings → Bindings → *Add* → D1 database → nome da variável **`DB`** → banco `moleculab-db`.
+3. Settings → Variables and Secrets → *Add* → tipo **Secret** → nome **`STATS_TOKEN`** → uma senha longa só sua.
+4. Deployments → refazer o último deploy (*Retry deployment*) para aplicar.
+
+As tabelas são criadas automaticamente na primeira visita. Os números são **privados**: não aparecem em nenhuma página pública. O painel fica em `https://moleculab.pages.dev/#/estatisticas` (fora do menu) e só mostra dados com a senha `STATS_TOKEN`; a API `/api/stats` responde 401 sem ela.
+
+**Proxy da PubChem:** se a rede do usuário bloquear `pubchem.ncbi.nlm.nih.gov`, o site tenta automaticamente pelo próprio domínio (`/api/pubchem/…`, função em `functions/api/pubchem/`), que só repassa consultas de leitura da API pública.
+
+Sem o banco configurado, o site funciona normalmente e simplesmente não conta.
 
 ## Arquitetura
 
@@ -149,4 +172,4 @@ Cobrem cálculos estequiométricos, diluições, massa molar, equações físico
 - **Plotly.js** (pacote *basic*) — gráficos.
 - **React 18, TypeScript, Vite 6, React Router**.
 
-© BYTE LAB — MOLECULAB.
+© THE BYTE LAB — MOLECULAB.

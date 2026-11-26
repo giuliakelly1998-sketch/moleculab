@@ -18,6 +18,7 @@ const ElementPage = lazy(() => import('./modules/elements/ElementPage'));
 const KnowledgePage = lazy(() => import('./modules/knowledge/KnowledgePage'));
 const FavoritesPage = lazy(() => import('./modules/favorites/FavoritesPage'));
 const SettingsPage = lazy(() => import('./modules/settings/SettingsPage'));
+const StatsPage = lazy(() => import('./modules/stats/StatsPage'));
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
                   <Route path="/knowledge/:topicId" element={<KnowledgePage />} />
                   <Route path="/favorites" element={<FavoritesPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/estatisticas" element={<StatsPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>

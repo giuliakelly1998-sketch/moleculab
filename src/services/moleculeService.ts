@@ -6,6 +6,15 @@ import { countsToFormula, looksLikeFormula, parseFormula } from '../chem/formula
 import { MoleculeRecord, SearchOutcome, num, Candidate } from '../chem/molecule';
 import { suggestNames } from './autocomplete';
 import { parseMolblock, formulaFromAtoms } from '../chem/sdf';
+import { applyLocal, findByFormula, findByName, findBySmiles, LocalCompound, suggestLocal } from './localLibrary';
+
+const isOffline = (e: unknown) => e instanceof AppError && (e.code === 'NETWORK' || e.code === 'TIMEOUT');
+const OFFLINE_NOTE = 'Sem acesso à PubChem agora. Exibindo a molécula da biblioteca local do MOLECULAB (identificadores e geometria calculados pelo RDKit; sem dados experimentais).';
+
+async function localOutcome(c: LocalCompound, text: string, type: QueryType, note: string): Promise<SearchOutcome> {
+  const rec = await localRecordFromSmiles(c.smiles, text);
+  return { kind: 'single', record: applyLocal({ ...rec, query: { text, type } }, c), interpretedAs: type, note };
+}
 
 const MAX_CANDIDATES = 20;
 
@@ -34,7 +43,24 @@ export async function searchMolecule(text: string, mode: QueryMode = 'auto'): Pr
     }
     case 'formula': {
       const hill = countsToFormula(parseFormula(q));
-      const list = await pc.cidsByFormula(hill, 40);
+      let list: number[];
+      try {
+        list = await pc.cidsByFormula(hill, 40);
+      } catch (e) {
+        if (!isOffline(e) && !(e instanceof AppError && e.code === 'NOT_FOUND')) throw e;
+        const local = await findByFormula(hill);
+        if (!local.length) {
+          if (isOffline(e)) throw new AppError('NETWORK', `Sem acesso à PubChem agora, e a biblioteca local não tem compostos com a fórmula ${hill}. Tente pelo SMILES.`);
+          throw e;
+        }
+        if (local.length === 1) return localOutcome(local[0], q, type, OFFLINE_NOTE);
+        return {
+          kind: 'multiple',
+          interpretedAs: type,
+          note: `${local.length} compostos com fórmula ${hill} na biblioteca local${isOffline(e) ? ' (sem acesso à PubChem agora)' : ''}. Escolha um.`,
+          candidates: local.map((c) => ({ title: c.pt, formula: c.formula, weight: c.mw, smiles: c.smiles })),
+        };
+      }
       return fromCidList(list, q, type, list.length > 1 ? `${list.length >= 40 ? 'Mais de 40' : list.length} compostos com fórmula ${hill}. Escolha um.` : undefined, true);
     }
     case 'smiles': {
@@ -47,36 +73,70 @@ export async function searchMolecule(text: string, mode: QueryMode = 'auto'): Pr
         if (mode === 'auto') return searchMolecule(q, looksLikeFormula(q) ? 'formula' : 'name');
         throw e;
       }
-      const list = await pc.cidsBySmiles(canonical);
+      let list: number[];
+      let offline = false;
+      try {
+        list = await pc.cidsBySmiles(canonical);
+      } catch (e) {
+        // Sem acesso à PubChem: a estrutura ainda pode ser analisada localmente com o RDKit.
+        if (e instanceof AppError && (e.code === 'NETWORK' || e.code === 'TIMEOUT')) {
+          list = [];
+          offline = true;
+        } else throw e;
+      }
       if (!list.length) {
+        const known = await findBySmiles(canonical);
+        if (known) return localOutcome(known, q, type, offline ? OFFLINE_NOTE : 'Estrutura não encontrada na PubChem. Exibindo a molécula da biblioteca local do MOLECULAB.');
         return {
           kind: 'single',
           record: await localRecordFromSmiles(canonical, q),
           interpretedAs: type,
-          note: 'Estrutura não encontrada na PubChem. Exibindo dados calculados localmente pelo RDKit.',
+          note: offline
+            ? 'Sem acesso à PubChem neste ambiente. Exibindo dados calculados localmente pelo RDKit.'
+            : 'Estrutura não encontrada na PubChem. Exibindo dados calculados localmente pelo RDKit.',
         };
       }
       return { kind: 'single', record: await recordFromCid(list[0], q, type), interpretedAs: type };
     }
     case 'name':
     default: {
-      let list: number[];
-      try {
-        list = await pc.cidsByName(q);
-      } catch (e) {
-        if (e instanceof AppError && e.code === 'NOT_FOUND') {
-          const alt = await suggestNames(q, 6).catch(() => [] as string[]);
-          const err = new AppError(
-            'NOT_FOUND',
-            `"${q}" não foi encontrado na PubChem.` +
-              (alt.length ? ' Talvez você procure um destes nomes:' : ' Tente o nome em inglês, o nome IUPAC, o SMILES ou o número CAS. Em derivados de acetofenona, as posições do anel levam apóstrofo (ex.: 3\'-bromo-4\'-methylacetophenone).'),
-          );
-          err.suggestions = alt;
-          throw err;
+      const local = await findByName(q);
+      let list: number[] = [];
+      let lastErr: unknown = null;
+      // Nome digitado e, se for um composto da biblioteca, também seus sinônimos em inglês (a PubChem não entende português).
+      const tries = [q, ...(local ? local.names.filter((n) => /^[\x20-\x7e]+$/.test(n) && n.toLowerCase() !== q.toLowerCase()).slice(0, 3) : [])];
+      for (const name of tries) {
+        try {
+          list = await pc.cidsByName(name);
+          if (list.length) break;
+        } catch (e) {
+          lastErr = e;
+          if (isOffline(e)) break;
+          if (!(e instanceof AppError && e.code === 'NOT_FOUND')) throw e;
         }
-        throw e;
       }
-      return fromCidList(list, q, 'name', list.length > 1 ? `O nome corresponde a ${list.length} registros; mostrando o principal.` : undefined);
+      if (list.length) {
+        const out = await fromCidList(list, q, 'name', list.length > 1 ? `O nome corresponde a ${list.length} registros; mostrando o principal.` : undefined);
+        if (local && out.kind === 'single') out.record = { ...out.record, title: local.pt };
+        return out;
+      }
+      if (local) return localOutcome(local, q, 'name', isOffline(lastErr) ? OFFLINE_NOTE : 'Nome não encontrado na PubChem. Exibindo a molécula da biblioteca local do MOLECULAB.');
+      const alt = [...new Set([...(await suggestLocal(q, 6)), ...(isOffline(lastErr) ? [] : await suggestNames(q, 6).catch(() => [] as string[]))])].slice(0, 8);
+      if (isOffline(lastErr)) {
+        const err = new AppError(
+          'NETWORK',
+          `Sem acesso à PubChem agora, e "${q}" não está na biblioteca local de compostos comuns.` + (alt.length ? ' Talvez você procure um destes:' : ' Tente o nome em português de um composto comum (ex.: cafeína, glicose, ácido acético) ou digite o SMILES.'),
+        );
+        err.suggestions = alt;
+        throw err;
+      }
+      const err = new AppError(
+        'NOT_FOUND',
+        `"${q}" não foi encontrado na PubChem.` +
+          (alt.length ? ' Talvez você procure um destes nomes:' : ' Tente o nome em inglês, o nome IUPAC, o SMILES ou o número CAS. Em derivados de acetofenona, as posições do anel levam apóstrofo (ex.: 3\'-bromo-4\'-methylacetophenone).'),
+      );
+      err.suggestions = alt;
+      throw err;
     }
   }
 }
